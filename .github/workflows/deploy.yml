@@ -21,12 +21,14 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '16'
-
-      - name: Build frontend
+  
+      - name: Build Frontend
         run: |
           cd ruoyi-ui
-          npm install
-          npm run build
+          npm install --legacy-peer-deps
+          npm run build:prod 
+        env:
+          NODE_OPTIONS: --max_old_space_size=4096
 
       - name: Build backend
         run: |
