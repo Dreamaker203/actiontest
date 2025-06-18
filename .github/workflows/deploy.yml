@@ -56,5 +56,5 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no root@60.204.213.152 "
             pkill -f 'java.*jar'
-            nohup java -jar /home/youruser/ruoyi-backend/xxx.jar > /dev/null 2>&1 &
+            nohup java -jar /root/ruoyi-backend/xxx.jar > /dev/null 2>&1 &
           "
