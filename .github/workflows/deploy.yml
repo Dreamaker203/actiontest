@@ -34,10 +34,15 @@ jobs:
         run: |
           mvn clean package -DskipTests
 
-      - name: Upload files to server
+      - name: Deploy to Server
         run: |
-          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./dist root@60.204.213.152:/root/ruoyi-ui
-          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./ruoyi-modules/target/*.jar root@60.204.213.152:/root/ruoyi-backend
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./ruoyi-ui/dist/ root@60.204.213.152:/root/ruoyi-ui/
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./ruoyi-modules/target/*.jar root@60.204.213.152:/root/ruoyi-backend/
+        env:
+          SSH_AUTH_SOCK: ${{ env.SSH_AUTH_SOCK }}
 
       - name: Restart backend services
         run: |
