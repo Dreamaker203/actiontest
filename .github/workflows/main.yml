@@ -1,0 +1,40 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
+
+      - name: Build frontend
+        run: |
+          cd ruoyi-ui
+          npm install
+          npm run build
+
+      - name: Build backend
+        run: |
+          mvn clean package -DskipTests
+
+      - name: Upload files to server
+        run: |
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./dist 用户名@服务器IP:/home/youruser/ruoyi-ui
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./ruoyi-modules/target/*.jar 用户名@服务器IP:/home/youruser/ruoyi-backend
+
+      - name: Restart backend services
+        run: |
+          ssh -o StrictHostKeyChecking=no 用户名@服务器IP "
+            pkill -f 'java.*jar'
+            nohup java -jar /home/youruser/ruoyi-backend/xxx.jar > /dev/null 2>&1 &
+          "
