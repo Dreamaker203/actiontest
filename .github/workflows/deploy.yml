@@ -29,12 +29,12 @@ jobs:
 
       - name: Upload files to server
         run: |
-          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./dist 用户名@服务器IP:/home/youruser/ruoyi-ui
-          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./ruoyi-modules/target/*.jar 用户名@服务器IP:/home/youruser/ruoyi-backend
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./dist root@60.204.213.152:/root/ruoyi-ui
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./ruoyi-modules/target/*.jar root@60.204.213.152:/root/ruoyi-backend
 
       - name: Restart backend services
         run: |
-          ssh -o StrictHostKeyChecking=no 用户名@服务器IP "
+          ssh -o StrictHostKeyChecking=no root@60.204.213.152 "
             pkill -f 'java.*jar'
             nohup java -jar /home/youruser/ruoyi-backend/xxx.jar > /dev/null 2>&1 &
           "
