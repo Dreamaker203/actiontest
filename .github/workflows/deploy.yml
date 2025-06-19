@@ -54,7 +54,11 @@ jobs:
 
       - name: Restart backend services
         run: |
-          ssh -o StrictHostKeyChecking=no root@60.204.213.152 "
-            pkill -f 'java.*jar'
-            nohup java -jar /root/ruoyi-backend/xxx.jar > /dev/null 2>&1 &
-          "
+           ssh -o StrictHostKeyChecking=no root@60.204.213.152 "
+                pkill -f 'java.*jar'
+                for jar in /root/ruoyi-backend/*.jar; do
+                  nohup java -jar \$jar &
+                done
+              "
+
+          
