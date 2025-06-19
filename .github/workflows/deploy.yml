@@ -8,12 +8,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up SSH Agent
+      - name: Set up SSH
         uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_KEY }}
@@ -22,25 +21,25 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '16'
-
+  
       - name: Build Frontend
         run: |
           cd ruoyi-ui
           npm install --legacy-peer-deps
-          npm run build:prod
+          npm run build:prod 
         env:
           NODE_OPTIONS: --max_old_space_size=4096
 
-      - name: Build Backend (Maven)
-        run: mvn clean package -DskipTests
-
-      - name: Upload frontend to server
+      - name: Build backend
         run: |
-          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" \
-            ./ruoyi-ui/dist/ ${{ secrets.USER }}@${{ secrets.HOST }}:/root/ruoyi-ui/
+          mvn clean package -DskipTests
 
-      - name: Upload backend jars to server
+      - name: Deploy to Server
         run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./ruoyi-ui/dist/ root@60.204.213.152:/root/ruoyi-ui/
           rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" \
             ruoyi-auth/target/*.jar \
             ruoyi-gateway/target/*.jar \
@@ -49,18 +48,15 @@ jobs:
             ruoyi-modules/ruoyi-gen/target/*.jar \
             ruoyi-modules/ruoyi-job/target/*.jar \
             ruoyi-modules/ruoyi-file/target/*.jar \
-            ${{ secrets.USER }}@${{ secrets.HOST }}:/root/ruoyi-backend/
+            root@60.204.213.152:/root/ruoyi-backend/
+        env:
+          SSH_AUTH_SOCK: ${{ env.SSH_AUTH_SOCK }}
 
       - name: Restart backend services
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.HOST }} << 'EOF'
-            echo "Stopping old services..."
-            pkill -f 'java.*jar' || true
-            echo "Starting new services..."
-            for jar in /root/ruoyi-backend/*.jar; do
-              nohup java -jar "$jar" > /dev/null 2>&1 &
-            done
-            echo "All backend services restarted."
-          EOF
-        env:
-          SSH_AUTH_SOCK: ${{ env.SSH_AUTH_SOCK }}
+           ssh -o StrictHostKeyChecking=no root@60.204.213.152 "
+                pkill -f 'java.*jar'
+                for jar in /root/ruoyi-backend/*.jar; do
+                  nohup java -jar \$jar &
+                done
+              "
